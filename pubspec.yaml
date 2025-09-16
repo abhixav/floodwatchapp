@@ -1,0 +1,47 @@
+name: floodwatchapp
+description: FloodWatch App
+publish_to: 'none' # This prevents accidental publishing to pub.dev
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  provider: ^6.1.2
+
+  # Map package
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+
+  # Image picking (camera/gallery)
+  image_picker: ^1.1.2
+
+  # Geolocation
+  geolocator: ^13.0.1
+
+  # UI helper for report screen
+  dotted_border: ^2.1.0
+
+  # Cupertino icons (optional but recommended)
+  cupertino_icons: ^1.0.8
+
+  # Firebase Core (required for all Firebase services)
+  firebase_core: ^3.4.0
+
+  # Firestore (for storing reports)
+  cloud_firestore: ^5.4.0
+
+  # Firebase Storage (for report images)
+  firebase_storage: ^12.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

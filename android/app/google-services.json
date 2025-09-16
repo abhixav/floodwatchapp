@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "680487708451",
+    "project_id": "urbanflooding-1ee2b",
+    "storage_bucket": "urbanflooding-1ee2b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:680487708451:android:245ecd311315a977a80e96",
+        "android_client_info": {
+          "package_name": "com.example.floodwatchapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCg6F1ni6Tpw2nR9Q1AULNWXwLDXhdvHWA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/area_model.dart';
 import '../models/report_model.dart';
 
 class DataService extends ChangeNotifier {
-  final List<Area> _areas = [];
-  final List<Report> _reports = [];
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  final List<Area> _areas = [];
   List<Area> get areas => List.unmodifiable(_areas);
-  List<Report> get reports => List.unmodifiable(_reports);
+
+  Stream<List<Report>> get reportsStream {
+    return _firestore.collection('flood_reports').snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) => Report.fromSnapshot(doc)).toList();
+    });
+  }
 
   void loadDummyData() {
     if (_areas.isNotEmpty) return;
@@ -53,17 +59,13 @@ class DataService extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addReport(Report r) {
-    _reports.insert(0, r);
-    notifyListeners();
-  }
-
-  // If you later want to update area risk from API:
-  void updateAreaRisk(String id, RiskLevel newRisk) {
-    final idx = _areas.indexWhere((a) => a.id == id);
-    if (idx != -1) {
-      _areas[idx].risk = newRisk;
-      notifyListeners();
-    }
+  Future<void> addReport(Report r) async {
+    // Simply add the document to Firestore
+    await _firestore.collection('flood_reports').add({
+      'note': r.note,
+      'location': GeoPoint(r.location.latitude, r.location.longitude),
+      'severity': r.severity.label,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 }

@@ -1,11 +1,7 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:dotted_border/dotted_border.dart';
-import 'package:provider/provider.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // 👈 NEW
-
+import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/app_colors.dart';
 import '../services/data_service.dart';
 import '../models/report_model.dart';
@@ -21,23 +17,8 @@ class ReportScreen extends StatefulWidget {
 class _ReportScreenState extends State<ReportScreen> {
   final TextEditingController _locCtrl = TextEditingController();
   final TextEditingController _descCtrl = TextEditingController();
-  final ImagePicker _picker = ImagePicker();
-
-  Uint8List? _imageBytes;
+  
   RiskLevel _severity = RiskLevel.moderate;
-
-  Future<void> _pickImage() async {
-    try {
-      final XFile? file = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1600,
-        imageQuality: 80,
-      );
-      if (file == null) return;
-      final bytes = await file.readAsBytes();
-      setState(() => _imageBytes = bytes);
-    } catch (_) {}
-  }
 
   void _useDemoLatLng() {
     _locCtrl.text = '8.4871, 76.9520';
@@ -54,35 +35,34 @@ class _ReportScreenState extends State<ReportScreen> {
 
     final r = Report(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      imageBytes: _imageBytes,
       note: _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
       location: LatLng(lat, lng),
       severity: _severity,
       createdAt: DateTime.now(),
     );
 
-    // Add to local DataService
-    svc.addReport(r);
-
-    // 👇 Save to Firebase Firestore
-    try {
-      await FirebaseFirestore.instance.collection("flood_reports").add({
-        "description": r.note ?? "",
-        "lat": r.location.latitude,
-        "lng": r.location.longitude,
-        "severity": r.severity.label,
-        "timestamp": FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      debugPrint("Error saving to Firestore: $e");
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Report submitted ✅')),
+    // Show a loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
-    _locCtrl.clear();
-    _descCtrl.clear();
-    setState(() => _imageBytes = null);
+
+    try {
+      await svc.addReport(r); 
+      Navigator.of(context).pop(); // Dismiss the loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Report submitted successfully!')),
+      );
+      _locCtrl.clear();
+      _descCtrl.clear();
+    } catch (e) {
+      Navigator.of(context).pop(); // Dismiss the loading indicator
+      debugPrint("Error submitting report: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to submit report. Error: $e')),
+      );
+    }
   }
 
   @override
@@ -105,49 +85,8 @@ class _ReportScreenState extends State<ReportScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(pad, pad, pad, pad + 80),
         children: [
-          GestureDetector(
-            onTap: _pickImage,
-            child: DottedBorder(
-              color: Colors.blueGrey.shade200,
-              dashPattern: const [6, 6],
-              borderType: BorderType.RRect,
-              radius: const Radius.circular(16),
-              child: Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 6,
-                        offset: const Offset(0, 3))
-                  ],
-                ),
-                alignment: Alignment.center,
-                child: _imageBytes == null
-                    ? Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Icon(Icons.camera_alt_outlined,
-                              size: 40, color: Colors.black45),
-                          SizedBox(height: 10),
-                          Text('Tap to attach photo (optional)',
-                              style: TextStyle(color: Colors.black54)),
-                        ],
-                      )
-                    : ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
-                        child: Image.memory(
-                          _imageBytes!,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          height: 200,
-                        ),
-                      ),
-              ),
-            ),
-          ),
+          // Remove the image-related widgets here
+          
           const SizedBox(height: 20),
           _label('Location *'),
           const SizedBox(height: 8),

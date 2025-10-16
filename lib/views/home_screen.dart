@@ -69,7 +69,7 @@ class _AlertCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.white, size: 40),
+            const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 40),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
@@ -136,9 +136,19 @@ class _AreaRow extends StatelessWidget {
           backgroundColor: area.risk.color.withOpacity(.2),
           child: Icon(Icons.water_drop, color: area.risk.color),
         ),
-        title: Text(
-          area.name,
-          style: const TextStyle(fontWeight: FontWeight.w700),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              area.name,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Rainfall: ${area.rainfall.toStringAsFixed(1)} mm',
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+          ],
         ),
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

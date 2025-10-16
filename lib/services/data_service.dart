@@ -1,23 +1,115 @@
+// lib/services/data_service.dart
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/api_service.dart';
 import '../models/area_model.dart';
 import '../models/report_model.dart';
 
 class DataService extends ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
   final List<Area> _areas = [];
   List<Area> get areas => List.unmodifiable(_areas);
 
-  Stream<List<Report>> get reportsStream {
-    return _firestore.collection('flood_reports').snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) => Report.fromSnapshot(doc)).toList();
-    });
+  // Flag to know if API data was successfully loaded
+  bool isApiData = false;
+
+  // Initialize ApiService with your OpenWeatherMap API key
+  final ApiService apiService = ApiService(
+    weatherApiKey: '83a929f084dd247bf70f6fbb7f3bdba7',
+  );
+
+  // ---------------- Load areas with rule-based risk ----------------
+  Future<void> fetchAreasFromApi() async {
+    try {
+      // Fetch city-level rainfall
+      final cityRainfall = await apiService.fetchRainfall(8.5241, 76.9366); // Trivandrum approx center
+
+      // Define your areas
+      final List<Area> apiAreas = [
+        Area(
+          id: 'tvm_central',
+          name: 'Thiruvananthapuram Central',
+          center: LatLng(8.4871, 76.9520),
+          radiusMeters: 700,
+          population: 75000,
+          updatedAt: DateTime.now(),
+          risk: _calculateRisk('tvm_central', cityRainfall),
+        ),
+        Area(
+          id: 'kazhakkoottam',
+          name: 'Kazhakkoottam',
+          center: LatLng(8.5735, 76.8642),
+          radiusMeters: 700,
+          population: 45500,
+          updatedAt: DateTime.now(),
+          risk: _calculateRisk('kazhakkoottam', cityRainfall),
+        ),
+        Area(
+          id: 'technopark',
+          name: 'Technopark Area',
+          center: LatLng(8.5580, 76.8795),
+          radiusMeters: 600,
+          population: 32100,
+          updatedAt: DateTime.now(),
+          risk: _calculateRisk('technopark', cityRainfall),
+        ),
+        Area(
+          id: 'kovalam',
+          name: 'Kovalam',
+          center: LatLng(8.4020, 76.9787),
+          radiusMeters: 650,
+          population: 18800,
+          updatedAt: DateTime.now(),
+          risk: _calculateRisk('kovalam', cityRainfall),
+        ),
+      ];
+
+      _areas.clear();
+      _areas.addAll(apiAreas);
+      isApiData = true;
+      notifyListeners();
+    } catch (e) {
+      print('Error fetching areas: $e');
+      loadDummyData(); // fallback if API fails
+    }
   }
 
+  // ---------------- Risk calculation based on rainfall thresholds ----------------
+  RiskLevel _calculateRisk(String areaId, double rainfall) {
+    // Example thresholds (you can adjust)
+    switch (areaId) {
+      case 'tvm_central':
+        if (rainfall > 20) return RiskLevel.severe;
+        if (rainfall > 10) return RiskLevel.high;
+        if (rainfall > 2) return RiskLevel.moderate;
+        return RiskLevel.safe;
+
+      case 'kazhakkoottam':
+        if (rainfall > 25) return RiskLevel.severe;
+        if (rainfall > 12) return RiskLevel.high;
+        if (rainfall > 3) return RiskLevel.moderate;
+        return RiskLevel.safe;
+
+      case 'technopark':
+        if (rainfall > 18) return RiskLevel.severe;
+        if (rainfall > 8) return RiskLevel.high;
+        if (rainfall > 2) return RiskLevel.moderate;
+        return RiskLevel.safe;
+
+      case 'kovalam':
+        if (rainfall > 15) return RiskLevel.severe;
+        if (rainfall > 7) return RiskLevel.high;
+        if (rainfall > 2) return RiskLevel.moderate;
+        return RiskLevel.safe;
+
+      default:
+        return RiskLevel.safe;
+    }
+  }
+
+  // ---------------- Dummy fallback ----------------
   void loadDummyData() {
     if (_areas.isNotEmpty) return;
+
     _areas.addAll([
       Area(
         id: 'tvm_central',
@@ -56,16 +148,18 @@ class DataService extends ChangeNotifier {
         risk: RiskLevel.safe,
       ),
     ]);
+
+    isApiData = false;
     notifyListeners();
   }
 
+  // ---------------- Add report (for ReportScreen) ----------------
+  final List<Report> _reports = [];
+  List<Report> get reports => List.unmodifiable(_reports);
+
   Future<void> addReport(Report r) async {
-    // Simply add the document to Firestore
-    await _firestore.collection('flood_reports').add({
-      'note': r.note,
-      'location': GeoPoint(r.location.latitude, r.location.longitude),
-      'severity': r.severity.label,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    _reports.add(r);
+    notifyListeners();
+    // You can also save to Firestore here if needed
   }
 }

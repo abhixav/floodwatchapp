@@ -40,6 +40,7 @@ class Area {
   final int population;
   final DateTime updatedAt;
   RiskLevel risk;
+  double rainfall; // <-- Added field
 
   Area({
     required this.id,
@@ -49,5 +50,6 @@ class Area {
     required this.population,
     required this.updatedAt,
     required this.risk,
+    this.rainfall = 0.0, // default value
   });
 }

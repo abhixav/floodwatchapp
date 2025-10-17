@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 import 'firebase_options.dart';
 import 'utils/app_colors.dart';
 import 'services/data_service.dart';
-import 'services/auth_service.dart';
-import 'views/login_screen.dart';
 import 'views/home_screen.dart';
 import 'views/map_screen.dart';
 import 'views/report_screen.dart';
@@ -26,46 +23,22 @@ class FloodWatchApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: AuthService().user,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const MaterialApp(
-            home: Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            ),
-          );
-        }
-
-        if (snapshot.data == null) {
-          return MaterialApp(
-            debugShowCheckedModeBanner: false,
-            theme: ThemeData(
-              useMaterial3: true,
-              colorSchemeSeed: AppColors.primary,
-            ),
-            home: LoginScreen(),
-          );
-        }
-
-        return ChangeNotifierProvider(
-          create: (_) => DataService()..fetchAreasFromApi(),
-          child: MaterialApp(
-            debugShowCheckedModeBanner: false,
-            theme: ThemeData(
-              useMaterial3: true,
-              colorSchemeSeed: AppColors.primary,
-              scaffoldBackgroundColor: const Color(0xFFF7F8FA),
-              appBarTheme: const AppBarTheme(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black87,
-                elevation: 0.8,
-              ),
-            ),
-            home: const RootNav(),
+    return ChangeNotifierProvider(
+      create: (_) => DataService()..fetchAreasFromApi(),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          useMaterial3: true,
+          colorSchemeSeed: AppColors.primary,
+          scaffoldBackgroundColor: const Color(0xFFF7F8FA),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black87,
+            elevation: 0.8,
           ),
-        );
-      },
+        ),
+        home: const RootNav(),
+      ),
     );
   }
 }

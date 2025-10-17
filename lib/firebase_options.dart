@@ -41,48 +41,48 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyB-mHjktGVHVGxgfRlpM9L74dpvlMDxhNc',
-    appId: '1:680487708451:web:9943e27751e7ed6aa80e96',
-    messagingSenderId: '680487708451',
-    projectId: 'urbanflooding-1ee2b',
-    authDomain: 'urbanflooding-1ee2b.firebaseapp.com',
-    storageBucket: 'urbanflooding-1ee2b.firebasestorage.app',
-    measurementId: 'G-E3X8JF3D7Y',
+    apiKey: 'AIzaSyAQ7Ky9bQHNIh--vbdpPYOEUPJ9P07fcmg',
+    appId: '1:695214659311:web:379485d30210ae2c5aed1a',
+    messagingSenderId: '695214659311',
+    projectId: 'floodwatch-trivandrum',
+    authDomain: 'floodwatch-trivandrum.firebaseapp.com',
+    storageBucket: 'floodwatch-trivandrum.firebasestorage.app',
+    measurementId: 'G-R333WTK6Z1',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCg6F1ni6Tpw2nR9Q1AULNWXwLDXhdvHWA',
-    appId: '1:680487708451:android:245ecd311315a977a80e96',
-    messagingSenderId: '680487708451',
-    projectId: 'urbanflooding-1ee2b',
-    storageBucket: 'urbanflooding-1ee2b.firebasestorage.app',
+    apiKey: 'AIzaSyB0G72QpLBXBIZ2vjUgknWBnScp1B78enw',
+    appId: '1:695214659311:android:8fcb94f99d49ca945aed1a',
+    messagingSenderId: '695214659311',
+    projectId: 'floodwatch-trivandrum',
+    storageBucket: 'floodwatch-trivandrum.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDpWNts2UwOaHR33AOMoIuzxdryhgo2ehs',
-    appId: '1:680487708451:ios:84ecd5726596a3b3a80e96',
-    messagingSenderId: '680487708451',
-    projectId: 'urbanflooding-1ee2b',
-    storageBucket: 'urbanflooding-1ee2b.firebasestorage.app',
+    apiKey: 'AIzaSyAbrAzlLcwgKz5e7hlFJcg_AjNfoCVsXeE',
+    appId: '1:695214659311:ios:f0e480c1ed6981355aed1a',
+    messagingSenderId: '695214659311',
+    projectId: 'floodwatch-trivandrum',
+    storageBucket: 'floodwatch-trivandrum.firebasestorage.app',
     iosBundleId: 'com.example.floodwatchapp',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyDpWNts2UwOaHR33AOMoIuzxdryhgo2ehs',
-    appId: '1:680487708451:ios:84ecd5726596a3b3a80e96',
-    messagingSenderId: '680487708451',
-    projectId: 'urbanflooding-1ee2b',
-    storageBucket: 'urbanflooding-1ee2b.firebasestorage.app',
+    apiKey: 'AIzaSyAbrAzlLcwgKz5e7hlFJcg_AjNfoCVsXeE',
+    appId: '1:695214659311:ios:f0e480c1ed6981355aed1a',
+    messagingSenderId: '695214659311',
+    projectId: 'floodwatch-trivandrum',
+    storageBucket: 'floodwatch-trivandrum.firebasestorage.app',
     iosBundleId: 'com.example.floodwatchapp',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyB-mHjktGVHVGxgfRlpM9L74dpvlMDxhNc',
-    appId: '1:680487708451:web:cb61cf7aabd1f04ea80e96',
-    messagingSenderId: '680487708451',
-    projectId: 'urbanflooding-1ee2b',
-    authDomain: 'urbanflooding-1ee2b.firebaseapp.com',
-    storageBucket: 'urbanflooding-1ee2b.firebasestorage.app',
-    measurementId: 'G-7WW1ZKZ8T1',
+    apiKey: 'AIzaSyAQ7Ky9bQHNIh--vbdpPYOEUPJ9P07fcmg',
+    appId: '1:695214659311:web:2db68bcd3e032e325aed1a',
+    messagingSenderId: '695214659311',
+    projectId: 'floodwatch-trivandrum',
+    authDomain: 'floodwatch-trivandrum.firebaseapp.com',
+    storageBucket: 'floodwatch-trivandrum.firebasestorage.app',
+    measurementId: 'G-BC6D3XF1W8',
   );
 }

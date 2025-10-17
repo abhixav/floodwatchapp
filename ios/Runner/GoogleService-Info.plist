@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyDpWNts2UwOaHR33AOMoIuzxdryhgo2ehs</string>
+	<string>AIzaSyAbrAzlLcwgKz5e7hlFJcg_AjNfoCVsXeE</string>
 	<key>GCM_SENDER_ID</key>
-	<string>680487708451</string>
+	<string>695214659311</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.example.floodwatchapp</string>
 	<key>PROJECT_ID</key>
-	<string>urbanflooding-1ee2b</string>
+	<string>floodwatch-trivandrum</string>
 	<key>STORAGE_BUCKET</key>
-	<string>urbanflooding-1ee2b.firebasestorage.app</string>
+	<string>floodwatch-trivandrum.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:680487708451:ios:84ecd5726596a3b3a80e96</string>
+	<string>1:695214659311:ios:f0e480c1ed6981355aed1a</string>
 </dict>
 </plist>

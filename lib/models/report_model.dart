@@ -17,6 +17,7 @@ class Report {
     required this.createdAt,
   });
 
+  // Convert Report to Firestore map
   Map<String, dynamic> toMap() {
     return {
       'note': note,
@@ -26,6 +27,7 @@ class Report {
     };
   }
 
+  // Convert Firestore snapshot to Report
   factory Report.fromSnapshot(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return Report(
@@ -40,6 +42,7 @@ class Report {
     );
   }
 
+  // Map string to RiskLevel enum
   static RiskLevel _getRiskLevelFromLabel(String label) {
     switch (label) {
       case 'Moderate':

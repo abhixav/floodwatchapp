@@ -1,6 +1,6 @@
-// lib/services/data_service.dart
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/api_service.dart';
 import '../models/area_model.dart';
 import '../models/report_model.dart';
@@ -9,10 +9,13 @@ class DataService extends ChangeNotifier {
   final List<Area> _areas = [];
   List<Area> get areas => List.unmodifiable(_areas);
 
-  // Flag to know if API data was successfully loaded
   bool isApiData = false;
 
-  // Initialize ApiService with your OpenWeatherMap API key
+  // Firestore collection reference
+  final CollectionReference _reportCol =
+      FirebaseFirestore.instance.collection('reports');
+
+  // Initialize ApiService with OpenWeatherMap API key
   final ApiService apiService = ApiService(
     weatherApiKey: '83a929f084dd247bf70f6fbb7f3bdba7',
   );
@@ -20,10 +23,8 @@ class DataService extends ChangeNotifier {
   // ---------------- Load areas with rule-based risk ----------------
   Future<void> fetchAreasFromApi() async {
     try {
-      // Fetch city-level rainfall
-      final cityRainfall = await apiService.fetchRainfall(8.5241, 76.9366); // Trivandrum approx center
+      final cityRainfall = await apiService.fetchRainfall(8.5241, 76.9366);
 
-      // Define your areas
       final List<Area> apiAreas = [
         Area(
           id: 'tvm_central',
@@ -69,38 +70,33 @@ class DataService extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       print('Error fetching areas: $e');
-      loadDummyData(); // fallback if API fails
+      loadDummyData();
     }
   }
 
-  // ---------------- Risk calculation based on rainfall thresholds ----------------
+  // ---------------- Risk calculation ----------------
   RiskLevel _calculateRisk(String areaId, double rainfall) {
-    // Example thresholds (you can adjust)
     switch (areaId) {
       case 'tvm_central':
         if (rainfall > 20) return RiskLevel.severe;
         if (rainfall > 10) return RiskLevel.high;
         if (rainfall > 2) return RiskLevel.moderate;
         return RiskLevel.safe;
-
       case 'kazhakkoottam':
         if (rainfall > 25) return RiskLevel.severe;
         if (rainfall > 12) return RiskLevel.high;
         if (rainfall > 3) return RiskLevel.moderate;
         return RiskLevel.safe;
-
       case 'technopark':
         if (rainfall > 18) return RiskLevel.severe;
         if (rainfall > 8) return RiskLevel.high;
         if (rainfall > 2) return RiskLevel.moderate;
         return RiskLevel.safe;
-
       case 'kovalam':
         if (rainfall > 15) return RiskLevel.severe;
         if (rainfall > 7) return RiskLevel.high;
         if (rainfall > 2) return RiskLevel.moderate;
         return RiskLevel.safe;
-
       default:
         return RiskLevel.safe;
     }
@@ -153,13 +149,32 @@ class DataService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------------- Add report (for ReportScreen) ----------------
+  // ---------------- Reports ----------------
   final List<Report> _reports = [];
   List<Report> get reports => List.unmodifiable(_reports);
 
+  // Add report to local list AND Firebase
   Future<void> addReport(Report r) async {
     _reports.add(r);
     notifyListeners();
-    // You can also save to Firestore here if needed
+
+    try {
+      await _reportCol.doc(r.id).set(r.toMap());
+      print('Report saved to Firestore successfully');
+    } catch (e) {
+      print('Error saving report to Firestore: $e');
+      throw e;
+    }
+  }
+
+  // Fetch reports from Firebase
+  Future<List<Report>> fetchReportsFromFirebase() async {
+    try {
+      final snapshot = await _reportCol.get();
+      return snapshot.docs.map((doc) => Report.fromSnapshot(doc)).toList();
+    } catch (e) {
+      print('Error fetching reports from Firestore: $e');
+      return [];
+    }
   }
 }

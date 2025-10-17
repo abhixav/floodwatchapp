@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../widgets/custom_appbar.dart';
 import '../services/data_service.dart';
@@ -22,7 +23,7 @@ class HomeScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
-            _AlertCard(areas: areas),
+            const _AlertSection(),
             const SizedBox(height: 16),
             const _SearchField(),
             const SizedBox(height: 20),
@@ -42,63 +43,112 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class _AlertCard extends StatelessWidget {
-  final List<Area> areas;
-  const _AlertCard({required this.areas});
+/// -------------------- ALERT SECTION --------------------
+class _AlertSection extends StatelessWidget {
+  const _AlertSection();
 
   @override
   Widget build(BuildContext context) {
-    final highCount =
-        areas.where((a) => a.risk == RiskLevel.high || a.risk == RiskLevel.severe).length;
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('alerts')
+          .orderBy('timestamp', descending: true)
+          .limit(1)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const SizedBox.shrink();
+        }
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.severe.withOpacity(.8), AppColors.high.withOpacity(.8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 6, offset: const Offset(0, 3)),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 40),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                '$highCount areas at High/Severe risk',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                  color: Colors.white,
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final alert = snapshot.data!.docs.first.data() as Map<String, dynamic>;
+
+        final title = alert['title'] ?? 'New Alert';
+        final message = alert['message'] ?? 'Stay alert and follow safety measures.';
+        final severity = alert['severity'] ?? 'Moderate';
+        final area = alert['targetArea'] ?? 'All Trivandrum Areas';
+
+        Color bgColor;
+        switch (severity.toLowerCase()) {
+          case 'critical':
+            bgColor = AppColors.severe;
+            break;
+          case 'high':
+            bgColor = AppColors.high;
+            break;
+          case 'moderate':
+            bgColor = AppColors.moderate;
+            break;
+          default:
+            bgColor = Colors.blueGrey;
+        }
+
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [bgColor.withOpacity(0.85), bgColor.withOpacity(0.65)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: bgColor.withOpacity(0.3),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(18),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.notifications_active, color: Colors.white, size: 36),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      message,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Severity: $severity • Area: $area',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            ElevatedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.notifications_active_outlined, size: 18),
-              label: const Text('Details'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: AppColors.severe,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              ),
-            )
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
 
+/// -------------------- SEARCH FIELD --------------------
 class _SearchField extends StatelessWidget {
   const _SearchField({super.key});
 
@@ -120,6 +170,7 @@ class _SearchField extends StatelessWidget {
   }
 }
 
+/// -------------------- AREA ROW --------------------
 class _AreaRow extends StatelessWidget {
   final Area area;
   const _AreaRow({required this.area});

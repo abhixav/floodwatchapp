@@ -43,7 +43,6 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-/// -------------------- ALERT SECTION --------------------
 class _AlertSection extends StatelessWidget {
   const _AlertSection();
 
@@ -56,18 +55,17 @@ class _AlertSection extends StatelessWidget {
           .limit(1)
           .snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return const SizedBox.shrink();
-        }
-
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        if (snapshot.hasError ||
+            !snapshot.hasData ||
+            snapshot.data!.docs.isEmpty) {
           return const SizedBox.shrink();
         }
 
         final alert = snapshot.data!.docs.first.data() as Map<String, dynamic>;
 
         final title = alert['title'] ?? 'New Alert';
-        final message = alert['message'] ?? 'Stay alert and follow safety measures.';
+        final message =
+            alert['message'] ?? 'Stay alert and follow safety measures.';
         final severity = alert['severity'] ?? 'Moderate';
         final area = alert['targetArea'] ?? 'All Trivandrum Areas';
 
@@ -86,57 +84,48 @@ class _AlertSection extends StatelessWidget {
             bgColor = Colors.blueGrey;
         }
 
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 400),
+        return Container(
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [bgColor.withOpacity(0.85), bgColor.withOpacity(0.65)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+              colors: [
+                bgColor.withOpacity(0.85),
+                bgColor.withOpacity(0.65),
+              ],
             ),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
                 color: bgColor.withOpacity(0.3),
-                blurRadius: 10,
+                blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
-          padding: const EdgeInsets.all(18),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.notifications_active, color: Colors.white, size: 36),
+              const Icon(Icons.notifications_active,
+                  color: Colors.white, size: 36),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    ),
+                    Text(title,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.white)),
                     const SizedBox(height: 6),
-                    Text(
-                      message,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
-                    ),
+                    Text(message,
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 14)),
                     const SizedBox(height: 8),
-                    Text(
-                      'Severity: $severity • Area: $area',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 12,
-                      ),
-                    ),
+                    Text('Severity: $severity • Area: $area',
+                        style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 12)),
                   ],
                 ),
               ),
@@ -148,10 +137,8 @@ class _AlertSection extends StatelessWidget {
   }
 }
 
-/// -------------------- SEARCH FIELD --------------------
 class _SearchField extends StatelessWidget {
   const _SearchField({super.key});
-
   @override
   Widget build(BuildContext context) {
     return TextField(
@@ -160,7 +147,8 @@ class _SearchField extends StatelessWidget {
         prefixIcon: const Icon(Icons.search),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide(color: Colors.grey.shade300),
@@ -170,7 +158,6 @@ class _SearchField extends StatelessWidget {
   }
 }
 
-/// -------------------- AREA ROW --------------------
 class _AreaRow extends StatelessWidget {
   final Area area;
   const _AreaRow({required this.area});
@@ -182,7 +169,8 @@ class _AreaRow extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         leading: CircleAvatar(
           backgroundColor: area.risk.color.withOpacity(.2),
           child: Icon(Icons.water_drop, color: area.risk.color),
@@ -190,32 +178,24 @@ class _AreaRow extends StatelessWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              area.name,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
+            Text(area.name, style: const TextStyle(fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
-            Text(
-              'Rainfall: ${area.rainfall.toStringAsFixed(1)} mm',
-              style: const TextStyle(fontSize: 12, color: Colors.black54),
-            ),
+            Text('Rainfall: ${area.rainfall.toStringAsFixed(1)} mm',
+                style: const TextStyle(fontSize: 12, color: Colors.black54)),
           ],
         ),
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [area.risk.color.withOpacity(.8), area.risk.color.withOpacity(.6)],
-            ),
+            gradient: LinearGradient(colors: [
+              area.risk.color.withOpacity(.8),
+              area.risk.color.withOpacity(.6),
+            ]),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Text(
-            area.risk.label,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
+          child: Text(area.risk.label,
+              style: const TextStyle(
+                  fontWeight: FontWeight.w700, color: Colors.white)),
         ),
       ),
     );

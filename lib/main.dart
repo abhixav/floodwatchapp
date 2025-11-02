@@ -15,6 +15,8 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Run the app after Firebase initialization
   runApp(const FloodWatchApp());
 }
 
@@ -23,8 +25,13 @@ class FloodWatchApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => DataService()..fetchAreasFromApi(),
+    return MultiProvider(
+      providers: [
+        // ✅ DataService now globally available and starts fetching on startup
+        ChangeNotifierProvider(
+          create: (_) => DataService()..fetchAreasFromApi(),
+        ),
+      ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
@@ -45,6 +52,7 @@ class FloodWatchApp extends StatelessWidget {
 
 class RootNav extends StatefulWidget {
   const RootNav({super.key});
+
   @override
   State<RootNav> createState() => _RootNavState();
 }

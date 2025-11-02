@@ -1,6 +1,6 @@
 name: floodwatchapp
-description: FloodWatch App
-publish_to: 'none' # This prevents accidental publishing to pub.dev
+description: FloodWatch App - Predict, Monitor, and Report Urban Flooding in Thiruvananthapuram
+publish_to: 'none' # Prevent accidental publishing to pub.dev
 version: 1.0.0+1
 
 environment:
@@ -10,38 +10,45 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # State management
+  # ✅ State management
   provider: ^6.1.2
 
-  # Map package
+  # ✅ Map for location visualization
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
 
-  # Image picking (camera/gallery)
+  # ✅ Camera and gallery picker
   image_picker: ^1.1.2
 
-  # Geolocation
+  # ✅ Geolocation services
   geolocator: ^13.0.1
 
-  # UI helper for report screen
+  # ✅ UI helper (for report screen borders, etc.)
   dotted_border: ^2.1.0
 
-  # HTTP for API calls
-  http: ^1.1.0
+  # ✅ HTTP package for connecting to your FastAPI flood risk model
+  http: ^1.2.0
 
-  # Cupertino icons (optional but recommended)
+  # ✅ Cupertino icons for iOS-like UI elements
   cupertino_icons: ^1.0.8
 
-  # Firebase Core (required for all Firebase services)
+  # ✅ Firebase core (required for all Firebase integrations)
   firebase_core: ^3.4.0
-  # Firebase Authentication (for login/signup)
+
+  # ✅ Firebase authentication (user login/signup)
   firebase_auth: ^5.7.0
 
-  # Firestore (for storing reports)
+  # ✅ Firestore database (for storing reports, users, logs)
   cloud_firestore: ^5.4.0
 
-  # Firebase Storage (for report images)
+  # ✅ Firebase storage (for uploading report images)
   firebase_storage: ^12.3.0
+
+  # ✅ Lottie animations for better UX (optional but nice)
+  lottie: ^3.1.2
+
+  # ✅ Google Fonts for clean typography
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -50,3 +57,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/

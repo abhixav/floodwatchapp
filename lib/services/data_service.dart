@@ -5,116 +5,223 @@ import '../services/api_service.dart';
 import '../models/area_model.dart';
 import '../models/report_model.dart';
 
+/// Centralized data manager for both API and Firestore
 class DataService extends ChangeNotifier {
   final List<Area> _areas = [];
   List<Area> get areas => List.unmodifiable(_areas);
 
   bool isApiData = false;
 
-  // Firestore collection reference
+  // Firestore reports collection
   final CollectionReference _reportCol =
       FirebaseFirestore.instance.collection('reports');
 
-  // Initialize ApiService with OpenWeatherMap API key
+  // Initialize ApiService
   final ApiService apiService = ApiService(
     weatherApiKey: '83a929f084dd247bf70f6fbb7f3bdba7',
+    fastApiBaseUrl: 'http://127.0.0.1:8000',
   );
 
-  // ---------------- Load areas with rule-based risk ----------------
+  // ----------------------------------------------------------------------
+  // Fetch data automatically from OpenWeather + FastAPI backend
+  // ----------------------------------------------------------------------
   Future<void> fetchAreasFromApi() async {
     try {
-      final cityRainfall = await apiService.fetchRainfall(8.5241, 76.9366);
+      final rainfall = await apiService.fetchRainfall(8.5241, 76.9366);
+      final apiAreas = await _fetchFastApiAreas(rainfall);
 
-      final List<Area> apiAreas = [
-        Area(
-          id: 'tvm_central',
-          name: 'Thiruvananthapuram Central',
-          center: LatLng(8.4871, 76.9520),
-          radiusMeters: 700,
-          population: 75000,
-          updatedAt: DateTime.now(),
-          risk: _calculateRisk('tvm_central', cityRainfall),
-        ),
-        Area(
-          id: 'kazhakkoottam',
-          name: 'Kazhakkoottam',
-          center: LatLng(8.5735, 76.8642),
-          radiusMeters: 700,
-          population: 45500,
-          updatedAt: DateTime.now(),
-          risk: _calculateRisk('kazhakkoottam', cityRainfall),
-        ),
-        Area(
-          id: 'technopark',
-          name: 'Technopark Area',
-          center: LatLng(8.5580, 76.8795),
-          radiusMeters: 600,
-          population: 32100,
-          updatedAt: DateTime.now(),
-          risk: _calculateRisk('technopark', cityRainfall),
-        ),
-        Area(
-          id: 'kovalam',
-          name: 'Kovalam',
-          center: LatLng(8.4020, 76.9787),
-          radiusMeters: 650,
-          population: 18800,
-          updatedAt: DateTime.now(),
-          risk: _calculateRisk('kovalam', cityRainfall),
-        ),
-      ];
-
-      _areas.clear();
-      _areas.addAll(apiAreas);
-      isApiData = true;
-      notifyListeners();
+      if (apiAreas.isNotEmpty) {
+        _areas
+          ..clear()
+          ..addAll(apiAreas);
+        isApiData = true;
+        notifyListeners();
+      } else {
+        loadDummyData();
+      }
     } catch (e) {
-      print('Error fetching areas: $e');
+      print('Error fetching API data: $e');
       loadDummyData();
     }
   }
 
-  // ---------------- Risk calculation ----------------
-  RiskLevel _calculateRisk(String areaId, double rainfall) {
-    switch (areaId) {
-      case 'tvm_central':
-        if (rainfall > 20) return RiskLevel.severe;
-        if (rainfall > 10) return RiskLevel.high;
-        if (rainfall > 2) return RiskLevel.moderate;
-        return RiskLevel.safe;
-      case 'kazhakkoottam':
-        if (rainfall > 25) return RiskLevel.severe;
-        if (rainfall > 12) return RiskLevel.high;
-        if (rainfall > 3) return RiskLevel.moderate;
-        return RiskLevel.safe;
-      case 'technopark':
-        if (rainfall > 18) return RiskLevel.severe;
-        if (rainfall > 8) return RiskLevel.high;
-        if (rainfall > 2) return RiskLevel.moderate;
-        return RiskLevel.safe;
-      case 'kovalam':
-        if (rainfall > 15) return RiskLevel.severe;
-        if (rainfall > 7) return RiskLevel.high;
-        if (rainfall > 2) return RiskLevel.moderate;
-        return RiskLevel.safe;
+  // ----------------------------------------------------------------------
+  // Fetch risk levels dynamically from FastAPI backend
+  // ----------------------------------------------------------------------
+  Future<List<Area>> _fetchFastApiAreas(double rainfall) async {
+    final List<Map<String, dynamic>> places = [
+      {
+        'id': 'chackai',
+        'name': 'Chackai',
+        'lat': 8.4990,
+        'lon': 76.9410,
+        'population': 30000,
+        'radius': 600
+      },
+      {
+        'id': 'east_fort',
+        'name': 'East Fort',
+        'lat': 8.4859,
+        'lon': 76.9470,
+        'population': 25000,
+        'radius': 600
+      },
+      {
+        'id': 'kazhakkoottam',
+        'name': 'Kazhakkoottam',
+        'lat': 8.5735,
+        'lon': 76.8642,
+        'population': 45500,
+        'radius': 700
+      },
+      {
+        'id': 'manacaud',
+        'name': 'Manacaud',
+        'lat': 8.4765,
+        'lon': 76.9515,
+        'population': 28000,
+        'radius': 600
+      },
+      {
+        'id': 'nalanchira',
+        'name': 'Nalanchira',
+        'lat': 8.5201,
+        'lon': 76.9602,
+        'population': 32000,
+        'radius': 650
+      },
+      {
+        'id': 'pattom',
+        'name': 'Pattom',
+        'lat': 8.5169,
+        'lon': 76.9410,
+        'population': 36000,
+        'radius': 600
+      },
+      {
+        'id': 'peroorkkada',
+        'name': 'Peroorkkada',
+        'lat': 8.5280,
+        'lon': 76.9615,
+        'population': 34000,
+        'radius': 650
+      },
+      {
+        'id': 'petta',
+        'name': 'Petta',
+        'lat': 8.4820,
+        'lon': 76.9500,
+        'population': 21000,
+        'radius': 600
+      },
+      {
+        'id': 'sreekaryam',
+        'name': 'Sreekaryam',
+        'lat': 8.5440,
+        'lon': 76.9170,
+        'population': 33000,
+        'radius': 700
+      },
+      {
+        'id': 'thycaud',
+        'name': 'Thycaud',
+        'lat': 8.4802,
+        'lon': 76.9495,
+        'population': 29000,
+        'radius': 600
+      },
+      {
+        'id': 'ulloorr',
+        'name': 'Ulloor',
+        'lat': 8.5370,
+        'lon': 76.9210,
+        'population': 31000,
+        'radius': 650
+      },
+      {
+        'id': 'vanchiyoor',
+        'name': 'Vanchiyoor',
+        'lat': 8.4870,
+        'lon': 76.9450,
+        'population': 28000,
+        'radius': 600
+      },
+      {
+        'id': 'vattiyurkkavu',
+        'name': 'Vattiyurkkavu',
+        'lat': 8.5540,
+        'lon': 76.9680,
+        'population': 27000,
+        'radius': 650
+      },
+      {
+        'id': 'vellayambalam',
+        'name': 'Vellayambalam',
+        'lat': 8.5090,
+        'lon': 76.9620,
+        'population': 26000,
+        'radius': 600
+      },
+    ];
+
+    final List<Area> result = [];
+
+    for (var place in places) {
+      try {
+        final riskString =
+            await apiService.predictRisk(place['name'], rainfall);
+        final risk = _riskFromString(riskString);
+
+        result.add(Area(
+          id: place['id'],
+          name: place['name'],
+          center: LatLng(place['lat'], place['lon']),
+          radiusMeters: place['radius'].toDouble(),
+          population: place['population'],
+          updatedAt: DateTime.now(),
+          risk: risk,
+          rainfall: rainfall,
+        ));
+      } catch (e) {
+        print('Error predicting risk for ${place['name']}: $e');
+      }
+    }
+
+    return result;
+  }
+
+  // ----------------------------------------------------------------------
+  // Risk conversion helper
+  // ----------------------------------------------------------------------
+  RiskLevel _riskFromString(String r) {
+    switch (r.toLowerCase()) {
+      case 'severe':
+        return RiskLevel.severe;
+      case 'high':
+        return RiskLevel.high;
+      case 'moderate':
+        return RiskLevel.moderate;
       default:
         return RiskLevel.safe;
     }
   }
 
-  // ---------------- Dummy fallback ----------------
+  // ----------------------------------------------------------------------
+  // Dummy fallback data (if APIs fail)
+  // ----------------------------------------------------------------------
   void loadDummyData() {
     if (_areas.isNotEmpty) return;
 
     _areas.addAll([
       Area(
-        id: 'tvm_central',
-        name: 'Thiruvananthapuram Central',
-        center: LatLng(8.4871, 76.9520),
-        radiusMeters: 700,
-        population: 75000,
+        id: 'chackai',
+        name: 'Chackai',
+        center: LatLng(8.4990, 76.9410),
+        radiusMeters: 600,
+        population: 30000,
+        rainfall: 12.0,
         updatedAt: DateTime.now().subtract(const Duration(hours: 2)),
-        risk: RiskLevel.severe,
+        risk: RiskLevel.high,
       ),
       Area(
         id: 'kazhakkoottam',
@@ -122,25 +229,18 @@ class DataService extends ChangeNotifier {
         center: LatLng(8.5735, 76.8642),
         radiusMeters: 700,
         population: 45500,
+        rainfall: 10.0,
         updatedAt: DateTime.now().subtract(const Duration(hours: 3)),
-        risk: RiskLevel.high,
-      ),
-      Area(
-        id: 'technopark',
-        name: 'Technopark Area',
-        center: LatLng(8.5580, 76.8795),
-        radiusMeters: 600,
-        population: 32100,
-        updatedAt: DateTime.now().subtract(const Duration(hours: 4)),
         risk: RiskLevel.moderate,
       ),
       Area(
-        id: 'kovalam',
-        name: 'Kovalam',
-        center: LatLng(8.4020, 76.9787),
-        radiusMeters: 650,
-        population: 18800,
-        updatedAt: DateTime.now().subtract(const Duration(hours: 6)),
+        id: 'vellayambalam',
+        name: 'Vellayambalam',
+        center: LatLng(8.5090, 76.9620),
+        radiusMeters: 600,
+        population: 26000,
+        rainfall: 5.0,
+        updatedAt: DateTime.now().subtract(const Duration(hours: 4)),
         risk: RiskLevel.safe,
       ),
     ]);
@@ -149,31 +249,30 @@ class DataService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------------- Reports ----------------
+  // ----------------------------------------------------------------------
+  // Firestore report handling
+  // ----------------------------------------------------------------------
   final List<Report> _reports = [];
   List<Report> get reports => List.unmodifiable(_reports);
 
-  // Add report to local list AND Firebase
   Future<void> addReport(Report r) async {
     _reports.add(r);
     notifyListeners();
 
     try {
       await _reportCol.doc(r.id).set(r.toMap());
-      print('Report saved to Firestore successfully');
+      print('✅ Report saved to Firestore');
     } catch (e) {
-      print('Error saving report to Firestore: $e');
-      throw e;
+      print('⚠️ Error saving report: $e');
     }
   }
 
-  // Fetch reports from Firebase
   Future<List<Report>> fetchReportsFromFirebase() async {
     try {
       final snapshot = await _reportCol.get();
       return snapshot.docs.map((doc) => Report.fromSnapshot(doc)).toList();
     } catch (e) {
-      print('Error fetching reports from Firestore: $e');
+      print('⚠️ Error fetching reports: $e');
       return [];
     }
   }

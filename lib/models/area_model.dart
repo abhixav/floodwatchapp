@@ -40,7 +40,10 @@ class Area {
   final int population;
   final DateTime updatedAt;
   RiskLevel risk;
-  double rainfall; // <-- Added field
+  double rainfall;
+
+  /// ✅ NEW FIELD — store 7-day rainfall predictions
+  List<double> forecast;
 
   Area({
     required this.id,
@@ -50,6 +53,7 @@ class Area {
     required this.population,
     required this.updatedAt,
     required this.risk,
-    this.rainfall = 0.0, // default value
+    this.rainfall = 0.0,
+    this.forecast = const [], // default empty list
   });
 }

@@ -20,28 +20,43 @@ class HomeScreen extends StatelessWidget {
         subtitle: 'Trivandrum Flood Monitor',
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          children: [
-            const _AlertSection(),
-            const SizedBox(height: 16),
-            const _SearchField(),
-            const SizedBox(height: 20),
-            Text(
-              'Flood Risk Areas',
-              style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await context.read<DataService>().fetchAreasFromApi();
+          },
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            children: [
+              const _AlertSection(),
+              const SizedBox(height: 16),
+              const _SearchField(),
+              const SizedBox(height: 20),
+              Text(
+                '7-Day Flood Predictions',
+                style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              if (areas.isEmpty)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(40.0),
+                    child: CircularProgressIndicator(),
                   ),
-            ),
-            const SizedBox(height: 12),
-            ...areas.map((a) => _AreaRow(area: a)).toList(),
-          ],
+                )
+              else
+                ...areas.map((a) => _AreaCard(area: a)).toList(),
+            ],
+          ),
         ),
       ),
     );
   }
 }
+
+// --------------------------- ALERT SECTION ------------------------------
 
 class _AlertSection extends StatelessWidget {
   const _AlertSection();
@@ -62,7 +77,6 @@ class _AlertSection extends StatelessWidget {
         }
 
         final alert = snapshot.data!.docs.first.data() as Map<String, dynamic>;
-
         final title = alert['title'] ?? 'New Alert';
         final message =
             alert['message'] ?? 'Stay alert and follow safety measures.';
@@ -137,8 +151,15 @@ class _AlertSection extends StatelessWidget {
   }
 }
 
-class _SearchField extends StatelessWidget {
+// --------------------------- SEARCH FIELD ------------------------------
+
+class _SearchField extends StatefulWidget {
   const _SearchField({super.key});
+  @override
+  State<_SearchField> createState() => _SearchFieldState();
+}
+
+class _SearchFieldState extends State<_SearchField> {
   @override
   Widget build(BuildContext context) {
     return TextField(
@@ -158,31 +179,30 @@ class _SearchField extends StatelessWidget {
   }
 }
 
-class _AreaRow extends StatelessWidget {
+// --------------------------- AREA CARD ------------------------------
+
+class _AreaCard extends StatelessWidget {
   final Area area;
-  const _AreaRow({required this.area});
+  const _AreaCard({required this.area});
 
   @override
   Widget build(BuildContext context) {
+    final List<double> forecast = area.forecast ?? [];
+
     return Card(
       elevation: 3,
       margin: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: ExpansionTile(
         leading: CircleAvatar(
           backgroundColor: area.risk.color.withOpacity(.2),
           child: Icon(Icons.water_drop, color: area.risk.color),
         ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(area.name, style: const TextStyle(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 4),
-            Text('Rainfall: ${area.rainfall.toStringAsFixed(1)} mm',
-                style: const TextStyle(fontSize: 12, color: Colors.black54)),
-          ],
+        title: Text(area.name,
+            style: const TextStyle(fontWeight: FontWeight.w700)),
+        subtitle: Text(
+          'Avg Rainfall: ${area.rainfall.toStringAsFixed(1)} mm',
+          style: const TextStyle(fontSize: 12, color: Colors.black54),
         ),
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -197,6 +217,46 @@ class _AreaRow extends StatelessWidget {
               style: const TextStyle(
                   fontWeight: FontWeight.w700, color: Colors.white)),
         ),
+        children: [
+          if (forecast.isNotEmpty)
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: List.generate(forecast.length, (index) {
+                  final day = DateTime.now().add(Duration(days: index + 1));
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${day.day}/${day.month}',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 13),
+                        ),
+                        Text(
+                          '${forecast[index].toStringAsFixed(1)} mm',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              color: Colors.blueGrey),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ),
+            )
+          else
+            const Padding(
+              padding: EdgeInsets.all(12.0),
+              child: Text(
+                'No forecast data available.',
+                style: TextStyle(fontSize: 13, color: Colors.black54),
+              ),
+            )
+        ],
       ),
     );
   }

@@ -6,57 +6,95 @@ import '../services/data_service.dart';
 import '../models/area_model.dart';
 import '../utils/app_colors.dart';
 
-class HomeScreen extends StatelessWidget {
+// Assuming Area and its Risk property, DataService, and AppColors are correctly imported.
+
+// 1. Convert to a StatefulWidget to manage the search query state (Maintained from previous fix)
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text;
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final areas = context.watch<DataService>().areas;
+    // Get all areas from the Provider
+    final allAreas = context.watch<DataService>().areas;
+
+    // Filtering Logic
+    final filteredAreas = allAreas.where((area) {
+      if (_searchQuery.isEmpty) return true;
+      // Case-insensitive search on the area name
+      return area.name.toLowerCase().contains(_searchQuery.toLowerCase());
+    }).toList();
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: Colors.grey.shade100, // Slightly lighter background
       appBar: const CustomAppBar(
         title: 'FloodWatch',
         subtitle: 'Trivandrum Flood Monitor',
       ),
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () async {
-            await context.read<DataService>().fetchAreasFromApi();
-          },
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            children: [
-              const _AlertSection(),
-              const SizedBox(height: 16),
-              const _SearchField(),
-              const SizedBox(height: 20),
-              Text(
-                '7-Day Flood Predictions',
-                style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-              ),
-              const SizedBox(height: 12),
-              if (areas.isEmpty)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(40.0),
-                    child: CircularProgressIndicator(),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 32), // Adjusted padding
+          children: [
+            const _AlertSection(),
+            const SizedBox(height: 24), // Reduced spacing
+            _SearchField(controller: _searchController),
+            const SizedBox(height: 28),
+            Text(
+              _searchQuery.isEmpty
+                  ? 'Flood Risk Areas'
+                  : 'Search Results (${filteredAreas.length})',
+              style: Theme.of(context).textTheme.headlineSmall!.copyWith( // Used headlineSmall for better hierarchy
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black87,
                   ),
-                )
-              else
-                ...areas.map((a) => _AreaCard(area: a)).toList(),
-            ],
-          ),
+            ),
+            const SizedBox(height: 16),
+            if (filteredAreas.isEmpty && _searchQuery.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 40.0),
+                child: Center(
+                  child: Text('No results found for "$_searchQuery".',
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
+                ),
+              ),
+            // Use the filtered list here
+            ...filteredAreas.map((a) => _AreaRow(area: a)).toList(),
+          ],
         ),
       ),
     );
   }
 }
 
-// --------------------------- ALERT SECTION ------------------------------
+// ---
+// ## Alert Section (Minimalist Alert Banner) - Styling Updated
+// ---
 
 class _AlertSection extends StatelessWidget {
   const _AlertSection();
@@ -77,6 +115,7 @@ class _AlertSection extends StatelessWidget {
         }
 
         final alert = snapshot.data!.docs.first.data() as Map<String, dynamic>;
+
         final title = alert['title'] ?? 'New Alert';
         final message =
             alert['message'] ?? 'Stay alert and follow safety measures.';
@@ -84,62 +123,61 @@ class _AlertSection extends StatelessWidget {
         final area = alert['targetArea'] ?? 'All Trivandrum Areas';
 
         Color bgColor;
+        Color textColor;
+        IconData icon;
+
         switch (severity.toLowerCase()) {
           case 'critical':
-            bgColor = AppColors.severe;
-            break;
           case 'high':
-            bgColor = AppColors.high;
+            bgColor = AppColors.severe.withOpacity(0.15); // Slightly richer background
+            textColor = AppColors.severe;
+            icon = Icons.flash_on_rounded;
             break;
           case 'moderate':
-            bgColor = AppColors.moderate;
+            bgColor = AppColors.moderate.withOpacity(0.15);
+            textColor = AppColors.moderate;
+            icon = Icons.warning_amber_rounded;
             break;
           default:
-            bgColor = Colors.blueGrey;
+            bgColor = Colors.blue.shade100;
+            textColor = Colors.blue.shade700;
+            icon = Icons.info_outline;
         }
 
         return Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                bgColor.withOpacity(0.85),
-                bgColor.withOpacity(0.65),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: bgColor.withOpacity(0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            color: bgColor,
+            borderRadius: BorderRadius.circular(16), // Softer corners
+            border: Border.all(color: textColor.withOpacity(0.3), width: 1),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.notifications_active,
-                  color: Colors.white, size: 36),
-              const SizedBox(width: 12),
+              Icon(icon, color: textColor, size: 30), // Slightly larger icon
+              const SizedBox(width: 15),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.white)),
+                    Text(
+                      title,
+                      style: TextStyle(
+                          fontWeight: FontWeight.w800, // Bolder title
+                          fontSize: 16,
+                          color: textColor),
+                    ),
                     const SizedBox(height: 6),
-                    Text(message,
-                        style: const TextStyle(
-                            color: Colors.white, fontSize: 14)),
+                    Text(
+                      message,
+                      style: const TextStyle(color: Colors.black87, fontSize: 14),
+                    ),
                     const SizedBox(height: 8),
                     Text('Severity: $severity • Area: $area',
                         style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: 12)),
+                            color: Colors.black54,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -151,112 +189,241 @@ class _AlertSection extends StatelessWidget {
   }
 }
 
-// --------------------------- SEARCH FIELD ------------------------------
+// ---
+// ## Search Field (Updated Styling)
+// ---
 
-class _SearchField extends StatefulWidget {
-  const _SearchField({super.key});
-  @override
-  State<_SearchField> createState() => _SearchFieldState();
-}
+class _SearchField extends StatelessWidget {
+  final TextEditingController controller;
+  const _SearchField({super.key, required this.controller});
 
-class _SearchFieldState extends State<_SearchField> {
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: controller, // Use the controller from HomeScreen
+      cursorColor: Theme.of(context).primaryColor,
       decoration: InputDecoration(
         hintText: 'Search locality...',
-        prefixIcon: const Icon(Icons.search),
+        hintStyle: TextStyle(color: Colors.grey.shade500),
+        prefixIcon: Icon(Icons.search, color: Theme.of(context).primaryColor), // Highlight search icon
+        suffixIcon: controller.text.isNotEmpty // Add a clear button
+            ? IconButton(
+                icon: const Icon(Icons.clear, color: Colors.grey),
+                onPressed: () {
+                  controller.clear();
+                },
+              )
+            : null,
         filled: true,
         fillColor: Colors.white,
-        contentPadding:
-            const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        // Use a subtle elevation via shadow instead of heavy border
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none, // Remove default border
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
         ),
       ),
     );
   }
 }
 
-// --------------------------- AREA CARD ------------------------------
+// ---
+// ## Area Row (Visual Hierarchy and Icons Improved)
+// ---
 
-class _AreaCard extends StatelessWidget {
+class _AreaRow extends StatelessWidget {
   final Area area;
-  const _AreaCard({required this.area});
+  const _AreaRow({required this.area});
+
+  // Helper method to determine the label color based on risk level
+  Color _getRiskColor() => area.risk.color;
+
+  // Helper method to determine the card background color based on risk level
+  Color _getCardBackgroundColor() => _getRiskColor().withOpacity(0.05);
+
+  IconData _getRiskIcon() {
+    if (area.risk.label.toLowerCase() == 'severe') return Icons.warning_rounded;
+    if (area.risk.label.toLowerCase() == 'moderate') return Icons.water_drop_rounded;
+    return Icons.shield_rounded;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final List<double> forecast = area.forecast ?? [];
-
     return Card(
-      elevation: 3,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: ExpansionTile(
-        leading: CircleAvatar(
-          backgroundColor: area.risk.color.withOpacity(.2),
-          child: Icon(Icons.water_drop, color: area.risk.color),
-        ),
-        title: Text(area.name,
-            style: const TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: Text(
-          'Avg Rainfall: ${area.rainfall.toStringAsFixed(1)} mm',
-          style: const TextStyle(fontSize: 12, color: Colors.black54),
-        ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [
-              area.risk.color.withOpacity(.8),
-              area.risk.color.withOpacity(.6),
-            ]),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(area.risk.label,
-              style: const TextStyle(
-                  fontWeight: FontWeight.w700, color: Colors.white)),
-        ),
-        children: [
-          if (forecast.isNotEmpty)
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Column(
+      elevation: 2, // Added subtle elevation for better pop-out effect
+      shadowColor: Colors.black.withOpacity(0.1),
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16), // Rounded corners
+        side: BorderSide(color: _getRiskColor().withOpacity(0.2), width: 1.5), // Colored left border effect
+      ),
+      color: _getCardBackgroundColor(), // Apply light color based on risk
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Area title + risk tag
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(_getRiskIcon(), color: _getRiskColor(), size: 28), // Risk Icon
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(area.name,
+                              style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                                  fontWeight: FontWeight.w800, color: Colors.black)), // Bolder name
+                          const SizedBox(height: 4),
+                          Text('Current Rainfall: ${area.rainfall.toStringAsFixed(1)} mm', // Better label
+                              style: const TextStyle(fontSize: 13, color: Colors.black54)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // Risk Status Chip (Clean background, colored text/border)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _getRiskColor(), // Solid color chip
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(area.risk.label,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white, // White text on solid background
+                          fontSize: 12)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            // 🔹 7-day rainfall forecast (Progress Indicator Bar)
+            if (area.forecast.isNotEmpty)
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: List.generate(forecast.length, (index) {
-                  final day = DateTime.now().add(Duration(days: index + 1));
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '${day.day}/${day.month}',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w600, fontSize: 13),
-                        ),
-                        Text(
-                          '${forecast[index].toStringAsFixed(1)} mm',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w500,
-                              color: Colors.blueGrey),
-                        ),
-                      ],
+                children: [
+                  const Text('7-Day Rainfall Forecast (mm):',
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black)),
+                  const SizedBox(height: 16),
+                  // PASSES ONLY THE FIRST 7 ELEMENTS
+                  _ForecastChart(forecast: area.forecast.take(7).toList()),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---
+// New Widget: Forecast Chart (Visual Polish)
+// ---
+
+class _ForecastChart extends StatelessWidget {
+  final List<double> forecast;
+  const _ForecastChart({required this.forecast});
+
+  // Scale: Max rainfall (e.g., 50mm) determines the full bar length (1.0)
+  static const double _maxRainfall = 50.0;
+  static const double _barWidth = 10; // Slightly thicker bar
+
+  double _getNormalizedValue(double rainfall) {
+    return (rainfall / _maxRainfall).clamp(0.0, 1.0);
+  }
+
+  Color _getBarColor(double rainfall) {
+    if (rainfall > 40) return AppColors.severe;
+    if (rainfall > 20) return AppColors.moderate;
+    return Colors.blue.shade600; // Deeper blue for low risk
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // We use a SizedBox to ensure the row takes up the full width, distributing children evenly.
+    return SizedBox(
+      height: 120, // Give the chart a fixed height
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround, // Evenly spaced
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: forecast.asMap().entries.map((entry) {
+          int index = entry.key;
+          double rainfall = entry.value;
+          double normalizedValue = _getNormalizedValue(rainfall);
+          Color barColor = _getBarColor(rainfall);
+          bool isToday = index == 0;
+          double barHeight = 70; // Max height of the bar
+
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              // Rainfall Value
+              Text(
+                '${rainfall.toStringAsFixed(0)}',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
+                    color: Colors.black87),
+              ),
+              const SizedBox(height: 8),
+              // The Bar container
+              Container(
+                height: barHeight, 
+                width: _barWidth,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200, // Background color for the empty part
+                  borderRadius: BorderRadius.circular(_barWidth / 2),
+                ),
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Container(
+                    height: barHeight * normalizedValue, // Actual height based on value
+                    width: _barWidth,
+                    decoration: BoxDecoration(
+                      color: barColor,
+                      borderRadius: BorderRadius.circular(_barWidth / 2),
+                      boxShadow: [
+                         BoxShadow(
+                           color: barColor.withOpacity(0.4),
+                           blurRadius: 5,
+                           spreadRadius: 1,
+                           offset: const Offset(0, 2),
+                         )
+                      ]
                     ),
-                  );
-                }),
+                  ),
+                ),
               ),
-            )
-          else
-            const Padding(
-              padding: EdgeInsets.all(12.0),
-              child: Text(
-                'No forecast data available.',
-                style: TextStyle(fontSize: 13, color: Colors.black54),
+              const SizedBox(height: 8),
+              // Day Label
+              Text(
+                isToday ? 'TODAY' : 'D${index + 1}', // Capitalized TODAY
+                style: TextStyle(
+                    fontSize: 10,
+                    color: isToday ? Colors.black : Colors.black54,
+                    fontWeight: isToday ? FontWeight.w800 : FontWeight.normal),
               ),
-            )
-        ],
+            ],
+          );
+        }).toList(),
       ),
     );
   }

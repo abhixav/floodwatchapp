@@ -324,7 +324,8 @@ class _AreaRow extends StatelessWidget {
                           color: Colors.black)),
                   const SizedBox(height: 16),
                   // PASSES ONLY THE FIRST 7 ELEMENTS
-                  _ForecastChart(forecast: area.forecast.take(7).toList()),
+                  _ForecastChart(forecast: area.forecast.take(7).toList(),currentRainfall: area.rainfall,),
+
                 ],
               ),
           ],
@@ -340,86 +341,95 @@ class _AreaRow extends StatelessWidget {
 
 class _ForecastChart extends StatelessWidget {
   final List<double> forecast;
-  const _ForecastChart({required this.forecast});
+  final double currentRainfall;
+  const _ForecastChart({required this.forecast, required this.currentRainfall});
 
-  // Scale: Max rainfall (e.g., 50mm) determines the full bar length (1.0)
   static const double _maxRainfall = 50.0;
-  static const double _barWidth = 10; // Slightly thicker bar
+  static const double _barWidth = 14;
 
-  double _getNormalizedValue(double rainfall) {
-    return (rainfall / _maxRainfall).clamp(0.0, 1.0);
-  }
+  double _getNormalizedValue(double rainfall) =>
+      (rainfall / _maxRainfall).clamp(0.0, 1.0);
 
   Color _getBarColor(double rainfall) {
     if (rainfall > 40) return AppColors.severe;
     if (rainfall > 20) return AppColors.moderate;
-    return Colors.blue.shade600; // Deeper blue for low risk
+    if (rainfall > 10) return Colors.lightBlue.shade700;
+    return Colors.blue.shade400;
   }
 
   @override
   Widget build(BuildContext context) {
-    // We use a SizedBox to ensure the row takes up the full width, distributing children evenly.
+    // Merge current rainfall into the first day
+    final updatedForecast = List<double>.from(forecast);
+    if (updatedForecast.isNotEmpty) updatedForecast[0] = currentRainfall;
+
     return SizedBox(
-      height: 120, // Give the chart a fixed height
+      height: 130,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround, // Evenly spaced
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.end,
-        children: forecast.asMap().entries.map((entry) {
+        children: updatedForecast.asMap().entries.map((entry) {
           int index = entry.key;
           double rainfall = entry.value;
           double normalizedValue = _getNormalizedValue(rainfall);
-          Color barColor = _getBarColor(rainfall);
+          double barHeight = 80;
+
           bool isToday = index == 0;
-          double barHeight = 70; // Max height of the bar
+          final barColor = _getBarColor(rainfall);
 
           return Column(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              // Rainfall Value
               Text(
-                '${rainfall.toStringAsFixed(0)}',
+                '${rainfall.toStringAsFixed(1)}',
                 style: TextStyle(
                     fontSize: 12,
-                    fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
-                    color: Colors.black87),
+                    fontWeight: FontWeight.w700,
+                    color: isToday ? Colors.black : Colors.black87),
               ),
-              const SizedBox(height: 8),
-              // The Bar container
+              const SizedBox(height: 6),
               Container(
-                height: barHeight, 
+                height: barHeight,
                 width: _barWidth,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200, // Background color for the empty part
+                  color: Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(_barWidth / 2),
                 ),
                 child: Align(
                   alignment: Alignment.bottomCenter,
                   child: Container(
-                    height: barHeight * normalizedValue, // Actual height based on value
+                    height: barHeight * normalizedValue,
                     width: _barWidth,
                     decoration: BoxDecoration(
-                      color: barColor,
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          barColor,
+                          barColor.withOpacity(0.7),
+                        ],
+                      ),
                       borderRadius: BorderRadius.circular(_barWidth / 2),
                       boxShadow: [
-                         BoxShadow(
-                           color: barColor.withOpacity(0.4),
-                           blurRadius: 5,
-                           spreadRadius: 1,
-                           offset: const Offset(0, 2),
-                         )
-                      ]
+                        BoxShadow(
+                          color: barColor.withOpacity(0.3),
+                          blurRadius: 6,
+                          spreadRadius: 1,
+                          offset: const Offset(0, 3),
+                        )
+                      ],
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 8),
-              // Day Label
               Text(
-                isToday ? 'TODAY' : 'D${index + 1}', // Capitalized TODAY
+                isToday ? 'Today' : 'Day ${index + 1}',
                 style: TextStyle(
-                    fontSize: 10,
-                    color: isToday ? Colors.black : Colors.black54,
-                    fontWeight: isToday ? FontWeight.w800 : FontWeight.normal),
+                  fontSize: 11,
+                  fontWeight: isToday ? FontWeight.w800 : FontWeight.w500,
+                  color: isToday ? Colors.black : Colors.black54,
+                ),
               ),
             ],
           );

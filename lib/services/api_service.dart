@@ -8,8 +8,9 @@ class ApiService {
 
   ApiService({
     required this.weatherApiKey,
-    this.fastApiBaseUrl =
-        "http://10.0.2.2:8000", // 👈 use 10.0.2.2 for Android emulator, 127.0.0.1 for Chrome
+    // 👇 Use 10.0.2.2 for Android Emulator
+    // 👇 Use 127.0.0.1 for Flutter Web / Desktop
+    this.fastApiBaseUrl = "http://10.0.2.2:8000",
   });
 
   // ----------------------------------------------------------------------
@@ -17,7 +18,8 @@ class ApiService {
   // ----------------------------------------------------------------------
   Future<double> fetchRainfall(double lat, double lon) async {
     final url = Uri.parse(
-      'https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=$weatherApiKey&units=metric',
+      'https://api.openweathermap.org/data/2.5/weather'
+      '?lat=$lat&lon=$lon&appid=$weatherApiKey&units=metric',
     );
 
     print("🌧️ Fetching rainfall from: $url");
@@ -28,7 +30,7 @@ class ApiService {
       final data = jsonDecode(response.body);
 
       if (data['rain'] != null && data['rain']['1h'] != null) {
-        final rain = (data['rain']['1h']).toDouble();
+        final rain = (data['rain']['1h'] as num).toDouble();
         print("🌧️ Rainfall (1h): $rain mm");
         return rain;
       } else {
@@ -45,8 +47,10 @@ class ApiService {
   // ----------------------------------------------------------------------
   Future<List<double>> fetch7DayRainfall(double lat, double lon) async {
     final url = Uri.parse(
-      'https://api.openweathermap.org/data/3.0/onecall?lat=$lat&lon=$lon'
-      '&exclude=current,minutely,hourly,alerts&appid=$weatherApiKey&units=metric',
+      'https://api.openweathermap.org/data/3.0/onecall'
+      '?lat=$lat&lon=$lon'
+      '&exclude=current,minutely,hourly,alerts'
+      '&appid=$weatherApiKey&units=metric',
     );
 
     print("📅 Fetching 7-day rainfall forecast: $url");
@@ -59,7 +63,9 @@ class ApiService {
 
       for (var day in data['daily']) {
         double rain = 0.0;
-        if (day.containsKey('rain')) rain = (day['rain'] as num).toDouble();
+        if (day.containsKey('rain')) {
+          rain = (day['rain'] as num).toDouble();
+        }
         rainAmounts.add(rain);
       }
 
@@ -71,28 +77,32 @@ class ApiService {
   }
 
   // ----------------------------------------------------------------------
-  // 🛰️ Get flood risk prediction from FastAPI model
+  // 🛰️ Get flood risk prediction from FastAPI ML model
   // ----------------------------------------------------------------------
   Future<String> predictRisk(String place, double rainfallMm) async {
     final encodedPlace = Uri.encodeComponent(place);
+
     final url = Uri.parse(
-      '$fastApiBaseUrl/predict/?place=$encodedPlace&rainfall_mm=$rainfallMm',
+      '$fastApiBaseUrl/predict/'
+      '?place=$encodedPlace'
+      '&rainfall_mm=$rainfallMm',
     );
 
     print("🛰️ Sending request to FastAPI: $url");
 
-    final response = await http.get(url); // ✅ GET request
+    // 🔴 IMPORTANT: Backend expects POST (not GET)
+    final response = await http.post(url);
     print("🛰️ FastAPI status: ${response.statusCode}");
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       print("✅ FastAPI response: $data");
 
-      // ✅ Adjusted key to match your FastAPI output
       return data['predicted_risk_label'] ?? 'safe';
     } else {
       throw Exception(
-          'Failed to get prediction from FastAPI: ${response.statusCode}');
+        'Failed to get prediction from FastAPI: ${response.statusCode}',
+      );
     }
   }
 }
